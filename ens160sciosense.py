@@ -1,10 +1,30 @@
+# micropython
+# MIT license
+# Copyright (c) 2022 Roman Shevchik   goctaprog@gmail.com
+
+import micropython
+from sensor_pack import bus_service
 from sensor_pack.base_sensor import BaseSensor, Iterator
-import ustruct
 
 
 class Ens160(BaseSensor, Iterator):
     """Class for work with Digital Metal-Oxide Multi-Gas Sensor ENS160.
     https://www.sciosense.com/products/environmental-sensors/digital-multi-gas-sensor/"""
+
+    def __init__(self, adapter: bus_service.I2cAdapter, address: int = 0x52):
+        """  """
+        super().__init__(adapter, address, False)
+
+    def _read_register(self, reg_addr, bytes_count=2) -> bytes:
+        """считывает из регистра датчика значение.
+        bytes_count - размер значения в байтах"""
+        return self.adapter.read_register(self.address, reg_addr, bytes_count)
+
+    def _write_register(self, reg_addr, value: int, bytes_count=2) -> int:
+        """записывает данные value в датчик, по адресу reg_addr.
+        bytes_count - кол-во записываемых данных"""
+        byte_order = self._get_byteorder_as_str()[0]
+        return self.adapter.write_register(self.address, reg_addr, value, bytes_count, byte_order)
 
     def __del__(self):
         self.power(False)   # power off before delete
