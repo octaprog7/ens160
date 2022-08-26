@@ -7,6 +7,13 @@ from sensor_pack import bus_service
 from sensor_pack.base_sensor import BaseSensor, Iterator
 
 
+@micropython.native
+def _check_value(value: int, valid_range, error_msg: str) -> int:
+    if value not in valid_range:
+        raise ValueError(error_msg)
+    return value
+
+
 class Ens160(BaseSensor, Iterator):
     """Class for work with Digital Metal-Oxide Multi-Gas Sensor ENS160.
     https://www.sciosense.com/products/environmental-sensors/digital-multi-gas-sensor/"""
@@ -27,40 +34,82 @@ class Ens160(BaseSensor, Iterator):
         return self.adapter.write_register(self.address, reg_addr, value, bytes_count, byte_order)
 
     def __del__(self):
-        self.power(False)   # power off before delete
+        self.set_mode(0x00)     # go to deep sleep
 
-    def _send_cmd(self, command: int):
-        """send 1 byte command to device"""
-        bo = self._get_byteorder_as_str()[0]    # big, little
-        self.adapter.write(self.address, command.to_bytes(1, bo))
-
-    def get_id(self):
-        """No ID support in sensor!"""
-        return None
+    def get_id(self) -> int:
+        """Return part number of the ENS160"""
+        reg_val = self._read_register(0x00, 2)
+        return self.unpack("H", reg_val)[0]
 
     def soft_reset(self):
         """Software reset."""
-        self._send_cmd(0b0000_0111)
+        self.set_mode(0xF0)
 
-    def power(self, on_off: bool = True):
-        """Sensor powering"""
-        if on_off:
-            self._send_cmd(0b0000_0001)
-        else:
-            self._send_cmd(0b0000_0000)
-
-    def set_mode(self, continuously: bool = True, high_resolution: bool = True):
+    def set_mode(self, new_mode: int):
         """Set sensor mode.
-        high resolution mode 2 not implemented. I have no desire to do this!"""
-        if continuously:
-            cmd = 0b0001_0000  # continuously mode
-        else:
-            cmd = 0b0010_0000  # one shot mode
+        Operating mode:
+                7:0     Field Name
+                0x00:   DEEP SLEEP mode (low-power standby)
+                0x01:   IDLE mode (low power)
+                0x02:   STANDARD Gas Sensing Mode
+                0xF0:   RESET"""
+        self._write_register(0x10, new_mode, 1)
 
-        if not high_resolution:
-            cmd |= 0b11    # L-Resolution Mode
+    def get_mode(self) -> int:
+        """Return current operation mode of sensor"""
+        reg_val = self._read_register(0x10, 1)
+        return self.unpack("B", reg_val)[0]
 
-        self._send_cmd(cmd)
+    def get_config(self) -> int:
+        reg_val = self._read_register(0x11, 1)
+        return self.unpack("b", reg_val)[0]
+
+    def set_config(self, new_config: int) -> int:
+        return self._write_register(0x11, new_config, 1)
+
+    def _exec_cmd(self, cmd: int) -> bytes:
+        _check_value(cmd, (0x00, 0x0E, 0xCC), f"Invalid command code: {cmd}")
+        self._write_register(0x12, cmd, 1)
+        # read General Purpose WRITE Registers at address 0x40-47
+        return self._read_register(0x40, 8)
+
+    def set_ambient_temp(self, value: float):
+        """write ambient temperature data to ENS160 for compensation. value in Celsius"""
+        t = int(64*(273.15+value))
+        self._write_register(0x13, t, 2)
+
+    def set_humidity(self, value: float):
+        """write relative humidity data to ENS160 for compensation. value in percent"""
+        h = int(512*value)
+        self._write_register(0x15, h, 2)
+
+    def get_status(self) -> int:
+        """indicates the current status of the ENS160"""
+        reg_val = self._read_register(0x20, 1)
+        return self.unpack("b", reg_val)[0]
+
+    def get_air_quality_index(self) -> int:
+        """reports the calculated Air Quality Index according to the UBA"""
+        reg_val = self._read_register(0x21, 1)
+        return self.unpack("b", reg_val)[0] & 0x07
+
+    def get_tvoc(self) -> int:
+        """reports the calculated TVOC concentration in ppb"""
+        reg_val = self._read_register(0x22, 2)
+        return self.unpack("H", reg_val)[0]
+
+    def get_eco2(self) -> int:
+        """reports the calculated equivalent CO 2 -concentration in ppm, based on the detected VOCs and hydrogen."""
+        reg_val = self._read_register(0x24, 2)
+        return self.unpack("H", reg_val)[0]
+
+    def get_last_checksum(self) -> int:
+        """reports the calculated checksum of the previous DATA_* read transaction (of n-
+        bytes). It can be read as a separate transaction, if required, to check the validity of the previous
+        transaction. The value should be compared with the number calculated by the Host system on the incoming Data."""
+        reg_val = self._read_register(0x38, 1)
+        return self.unpack("b", reg_val)[0]
+
 
     def get_illumination(self) -> int:
         """Return illumination in lux"""

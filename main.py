@@ -18,19 +18,19 @@ if __name__ == '__main__':
     i2c = I2C(0, freq=400_000)  # on Arduino Nano RP2040 Connect tested
     adaptor = I2cAdapter(i2c)
     # ps - pressure sensor
-    gas_sens = ens160sciosense.Ens160(adaptor, 0x23, True)
+    gas_sens = ens160sciosense.Ens160(adaptor)
 
     # если у вас посыпались исключения, чего у меня на макетной плате с али и проводами МГТВ не наблюдается,
     # то проверьте все соединения.
     # Радиотехника - наука о контактах! РТФ-Чемпион!
-    gas_sens.power(True)  # Sensor Of Lux
-    gas_sens.set_mode(True, True)
-    old_lux = curr_max = 1
+    gas_sens.set_mode(0x02)
+    gs_id = gas_sens.get_id()
+    print(f"Sensor ID: {gs_id}")
 
-    for lux in gas_sens:
-        if lux != old_lux:
-            curr_max = max(lux, curr_max)
-            lt = time.localtime()
-            print(f"{lt[3:6]}\tIllumination [lux]: {lux}\tmax: {curr_max}\tNormalized [%]: {100 * lux / curr_max}")
-        old_lux = lux
-        time.sleep_ms(150)
+    while True:
+        co2, tvoc = gas_sens.get_eco2(), gas_sens.get_tvoc()
+        aqi = gas_sens.get_air_quality_index()
+        print(f"CO2: {co2}\tTVOC: {tvoc}\tAQI: {aqi}")
+        time.sleep_ms(1000)
+
+
