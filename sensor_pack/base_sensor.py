@@ -6,6 +6,13 @@ import ustruct
 from sensor_pack import bus_service
 
 
+@micropython.native
+def check_value(value: int, valid_range, error_msg: str) -> int:
+    if value not in valid_range:
+        raise ValueError(error_msg)
+    return value
+
+
 class BaseSensor:
     """Base sensor class"""
 
@@ -37,6 +44,11 @@ class BaseSensor:
             raise ValueError(f"Invalid length fmt_char parameter: {len(fmt_char)}")
         bo = self._get_byteorder_as_str()[1]
         return ustruct.unpack(bo + fmt_char, source)
+
+    def pack(self, fmt_char: str, value) -> bytes:
+        """упаковка значения, для записи в датчик."""
+        bo = self._get_byteorder_as_str()[1]
+        return ustruct.pack(bo + fmt_char, value)
 
     @micropython.native
     def is_big_byteorder(self) -> bool:
