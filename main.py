@@ -27,8 +27,6 @@ if __name__ == '__main__':
     fw = gas_sens.get_firmware_version()
     print(f"Sensor ID: {hex(gs_id)}\tFirmware version: {fw}")
 
-    while True:
-        co2, tvoc = gas_sens.get_eco2(), gas_sens.get_tvoc()
-        aqi = gas_sens.get_air_quality_index()
-        print(f"CO2: {co2}\tTVOC: {tvoc}\tAQI: {aqi}")
+    for eco2, tvoc, aqi in gas_sens:
+        print(f"CO2: {eco2}\tTVOC: {tvoc}\tAQI: {aqi}")
         time.sleep_ms(1000)
