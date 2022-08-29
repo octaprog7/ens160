@@ -46,7 +46,7 @@ class Ens160(BaseSensor, Iterator):
                 0x01:   IDLE mode (low power)
                 0x02:   STANDARD Gas Sensing Mode
                 0xF0:   RESET"""
-        nm = check_value(new_mode, range(3))
+        nm = check_value(new_mode, range(3), f"Invalid mode value: {new_mode}")
         self._write_register(0x10, nm, 1)
 
     def get_mode(self) -> int:
