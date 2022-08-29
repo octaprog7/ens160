@@ -99,7 +99,7 @@ class Ens160(BaseSensor, Iterator):
 
     def get_air_quality_index(self) -> int:
         """reports the calculated Air Quality Index according to the UBA.
-        Возвращает расчетный индекс качества воздуха в соответствии с UBA"""
+        Возвращает расчетный индекс качества воздуха в соответствии с UBA. 1(прекрасно)..5(кошмар))"""
         reg_val = self._read_register(0x21, 1)
         return self.unpack("b", reg_val)[0] & 0x07
 
@@ -111,7 +111,7 @@ class Ens160(BaseSensor, Iterator):
 
     def get_eco2(self) -> int:
         """reports the calculated equivalent CO 2 -concentration in ppm, based on the detected VOCs and hydrogen.
-        Возвращает расчетную эквивалентную концентрацию CO2 в частях на миллион на
+        Возвращает расчетную эквивалентную концентрацию CO2 в частях на миллион [ppm] на
         основе обнаруженных летучих органических соединений (ЛОС) и водорода."""
         reg_val = self._read_register(0x24, 2)
         return self.unpack("H", reg_val)[0]
@@ -135,5 +135,6 @@ class Ens160(BaseSensor, Iterator):
         return b[4], b[5], b[6]
 
     def __next__(self) -> tuple:
-        """Механизм итератора"""
-        return self.get_tvoc(), self.get_eco2()
+        """Механизм итератора.
+        Возвращает кортеж: CO2 [ppm], ЛОС[ppm], Индекс Качества Воздуха. 1(прекрасно)..5(кошмар)"""
+        return self.get_eco2(), self.get_tvoc(), self.get_air_quality_index()
