@@ -22,15 +22,13 @@ if __name__ == '__main__':
 
     # если у вас посыпались исключения, чего у меня на макетной плате с али и проводами МГТВ не наблюдается,
     # то проверьте все соединения.
-    # Радиотехника - наука о контактах! РТФ-Чемпион!
     gas_sens.set_mode(0x02)
     gs_id = gas_sens.get_id()
-    print(f"Sensor ID: {hex(gs_id)}")
+    fw = gas_sens.get_firmware_version()
+    print(f"Sensor ID: {hex(gs_id)}\tFirmware version: {fw}")
 
     while True:
         co2, tvoc = gas_sens.get_eco2(), gas_sens.get_tvoc()
         aqi = gas_sens.get_air_quality_index()
         print(f"CO2: {co2}\tTVOC: {tvoc}\tAQI: {aqi}")
         time.sleep_ms(1000)
-
-
