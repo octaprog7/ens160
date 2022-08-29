@@ -2,7 +2,6 @@
 # MIT license
 # Copyright (c) 2022 Roman Shevchik   goctaprog@gmail.com
 
-import micropython
 from sensor_pack import bus_service
 from sensor_pack.base_sensor import BaseSensor, Iterator, check_value
 
@@ -40,32 +39,38 @@ class Ens160(BaseSensor, Iterator):
 
     def set_mode(self, new_mode: int):
         """Set sensor mode.
+        Устанавливает режим работы датчика.
         Operating mode:
                 7:0     Field Name
-                0x00:   DEEP SLEEP mode (low-power standby)
-                0x01:   IDLE mode (low power)
-                0x02:   STANDARD Gas Sensing Mode
+                --------------------------------------------
+                0x00:   DEEP SLEEP mode (low-power standby) (режим ожидания)
+                0x01:   IDLE mode (low power)   (экономный режим работы, для батарейной техники)
+                0x02:   STANDARD Gas Sensing Mode (нормальный режим)
                 0xF0:   RESET"""
         nm = check_value(new_mode, range(3), f"Invalid mode value: {new_mode}")
         self._write_register(0x10, nm, 1)
 
     def get_mode(self) -> int:
-        """Return current operation mode of sensor"""
+        """Return current operation mode of sensor
+        Возвращает текущий режим работы датчика"""
         reg_val = self._read_register(0x10, 1)
         return self.unpack("B", reg_val)[0]
 
     def get_config(self) -> int:
         """Return current config from sensor.
-        Pls see Table 19: Register CONFIG in official documentation!"""
+        Pls see Table 19: Register CONFIG in official documentation!
+        Возвращает текущие настройки датчика. Смотри таблицу 19 в официальной документации"""
         reg_val = self._read_register(0x11, 1)
         return self.unpack("b", reg_val)[0]
 
     def set_config(self, new_config: int) -> int:
         """Set current config sensor.
-        Pls see Table 19: Register CONFIG in official documentation!"""
+        Pls see Table 19: Register CONFIG in official documentation!
+         Настраивает датчик. Смотри таблицу 19 в официальной документации"""
         return self._write_register(0x11, new_config, 1)
 
     def _exec_cmd(self, cmd: int) -> bytes:
+        """Для внутреннего использования!"""
         check_value(cmd, (0x00, 0x0E, 0xCC), f"Invalid command code: {cmd}")
         self._write_register(0x12, cmd, 1)
         return self._read_register(0x48, 8)
@@ -99,19 +104,27 @@ class Ens160(BaseSensor, Iterator):
         return self.unpack("b", reg_val)[0] & 0x07
 
     def get_tvoc(self) -> int:
-        """reports the calculated TVOC concentration in ppb"""
+        """reports the calculated TVOC concentration in ppb.
+        Возвращает расчетную концентрацию Летучих Органических Соединений (ЛОС) в частях на миллион (ppm)"""
         reg_val = self._read_register(0x22, 2)
         return self.unpack("H", reg_val)[0]
 
     def get_eco2(self) -> int:
-        """reports the calculated equivalent CO 2 -concentration in ppm, based on the detected VOCs and hydrogen."""
+        """reports the calculated equivalent CO 2 -concentration in ppm, based on the detected VOCs and hydrogen.
+        Возвращает расчетную эквивалентную концентрацию CO2 в частях на миллион на
+        основе обнаруженных летучих органических соединений (ЛОС) и водорода."""
         reg_val = self._read_register(0x24, 2)
         return self.unpack("H", reg_val)[0]
 
-    def get_last_checksum(self) -> int:
-        """reports the calculated checksum of the previous DATA_* read transaction (of n-
-        bytes). It can be read as a separate transaction, if required, to check the validity of the previous
-        transaction. The value should be compared with the number calculated by the Host system on the incoming Data."""
+    def _get_last_checksum(self) -> int:
+        """Reports the calculated checksum of the previous DATA_* read transaction (of n-bytes).
+        It can be read as a separate transaction, if required, to check the validity of the previous
+        transaction. The value should be compared with the number calculated by the Host system on the incoming Data.
+
+        Возвращает рассчитанную контрольную сумму предыдущей транзакции чтения n-байт.
+        При необходимости её можно прочитать как отдельную транзакцию, чтобы проверить правильность предыдущей
+        операции чтения. Значение следует сравнить с числом, рассчитанным хост-системой для входящих данных!
+        """
         reg_val = self._read_register(0x38, 1)
         return self.unpack("b", reg_val)[0]
 
@@ -121,5 +134,6 @@ class Ens160(BaseSensor, Iterator):
         b = self._exec_cmd(0x0E)
         return b[4], b[5], b[6]
 
-    def __next__(self) -> int:
-        pass
+    def __next__(self) -> tuple:
+        """Механизм итератора"""
+        return self.get_tvoc(), self.get_eco2()
