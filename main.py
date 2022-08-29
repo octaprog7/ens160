@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # Радиотехника - наука о контактах! РТФ-Чемпион!
     gas_sens.set_mode(0x02)
     gs_id = gas_sens.get_id()
-    print(f"Sensor ID: {gs_id}")
+    print(f"Sensor ID: {hex(gs_id)}")
 
     while True:
         co2, tvoc = gas_sens.get_eco2(), gas_sens.get_tvoc()
