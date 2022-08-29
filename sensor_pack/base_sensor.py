@@ -45,11 +45,6 @@ class BaseSensor:
         bo = self._get_byteorder_as_str()[1]
         return ustruct.unpack(bo + fmt_char, source)
 
-    def pack(self, fmt_char: str, value) -> bytes:
-        """упаковка значения, для записи в датчик."""
-        bo = self._get_byteorder_as_str()[1]
-        return ustruct.pack(bo + fmt_char, value)
-
     @micropython.native
     def is_big_byteorder(self) -> bool:
         return self.big_byte_order
