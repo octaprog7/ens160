@@ -4,20 +4,47 @@
 
 from sensor_pack import bus_service
 from sensor_pack.base_sensor import BaseSensor, Iterator, check_value
+from sensor_pack import crc_mod
 
 
 class Ens160(BaseSensor, Iterator):
     """Class for work with Digital Metal-Oxide Multi-Gas Sensor ENS160.
     https://www.sciosense.com/products/environmental-sensors/digital-multi-gas-sensor/"""
+    _CRC_POLY = 0x1D
 
-    def __init__(self, adapter: bus_service.I2cAdapter, address: int = 0x52):
+    @staticmethod
+    def _crc8(sequence, polynomial: int, init_value: int):
+        """какое-то особое CRC8 от sciosense!"""
+        crc = init_value & 0xFF
+        for item in sequence:
+            tmp = 0xFF & ((crc << 1) ^ item)
+            if 0 == crc & 0x80:
+                crc = tmp
+            else:
+                crc = tmp ^ polynomial
+        return crc
+
+    def __init__(self, adapter: bus_service.I2cAdapter, address: int = 0x52, check_crc: bool = True):
         """  """
         super().__init__(adapter, address, False)
+        self.check_crc = check_crc
+        self.misr = 0
+        # misr sinchronization!
+        self._get_last_checksum()
 
     def _read_register(self, reg_addr, bytes_count=2) -> bytes:
         """считывает из регистра датчика значение.
         bytes_count - размер значения в байтах"""
-        return self.adapter.read_register(self.address, reg_addr, bytes_count)
+        b = self.adapter.read_register(self.address, reg_addr, bytes_count)
+        if self.check_crc:
+            if 0x38 == reg_addr:
+                self.misr = b[0]    # update misr
+                return b
+            # calc crc buf
+            crc = Ens160._crc8(b, Ens160._CRC_POLY, self.misr)
+            print(f"crc, misr: {hex(crc)}, {hex(self.misr)}")
+            # compare calculated crc and misr
+        return b
 
     def _write_register(self, reg_addr, value: int, bytes_count=2) -> int:
         """записывает данные value в датчик, по адресу reg_addr.
@@ -47,7 +74,7 @@ class Ens160(BaseSensor, Iterator):
                 0x01:   IDLE mode (low power)   (экономный режим работы, для батарейной техники)
                 0x02:   STANDARD Gas Sensing Mode (нормальный режим)
                 0xF0:   RESET"""
-        nm = check_value(new_mode, range(3), f"Invalid mode value: {new_mode}")
+        nm = check_value(new_mode, (0, 1, 2, 0xF0), f"Invalid mode value: {new_mode}")
         self._write_register(0x10, nm, 1)
 
     def get_mode(self) -> int:
@@ -80,7 +107,7 @@ class Ens160(BaseSensor, Iterator):
         This value must be read from the temperature sensor! It must be correct!
         Записывает в ENS160 датчик температуру окружающей среды, для компенсации!
         Значение в градусах Цельсия! Это значение должно быть считано с датчика температуры!
-        Это должно быть правильным!
+        Оно должно быть правильным и в допустимом диапазоне!
         """
         t = int(64*(273.15+value_in_celsius))
         self._write_register(0x13, t, 2)
@@ -88,7 +115,7 @@ class Ens160(BaseSensor, Iterator):
     def set_humidity(self, rel_hum: int):
         """write relative humidity data to ENS160 for compensation. value in percent.
         Записывает в ENS160 датчик относительную влажность, для компенсации! значение в процентах!"""
-        check_value(rel_hum, range(101), f"Invalid command code: {rel_hum}")
+        check_value(rel_hum, range(101), f"Invalid humidity value: {rel_hum}")
         self._write_register(0x15, rel_hum << 9, 2)
 
     def get_status(self) -> int:
@@ -126,7 +153,7 @@ class Ens160(BaseSensor, Iterator):
         операции чтения. Значение следует сравнить с числом, рассчитанным хост-системой для входящих данных!
         """
         reg_val = self._read_register(0x38, 1)
-        return self.unpack("b", reg_val)[0]
+        return self.unpack("B", reg_val)[0]
 
     def get_firmware_version(self) -> tuple:
         """Return the firmware version of the ENS160 as tuple (Major, Minor, Release).
