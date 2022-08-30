@@ -4,7 +4,6 @@
 
 from sensor_pack import bus_service
 from sensor_pack.base_sensor import BaseSensor, Iterator, check_value
-from sensor_pack import crc_mod
 
 
 class Ens160(BaseSensor, Iterator):
