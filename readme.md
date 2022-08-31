@@ -11,3 +11,5 @@ and sensor_pack folder. Then open main.py in your IDE and run it.
 ![alt text](https://github.com/octaprog7/ens160/blob/master/ide_ens160.png)
 ## Breadboard
 ![alt text](https://github.com/octaprog7/ens160/blob/master/brd_ens160.png)
+## CO2 and TVOC graph
+![alt text](https://github.com/octaprog7/ens160/blob/master/co2_graph.png)
