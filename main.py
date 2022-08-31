@@ -7,7 +7,7 @@
 from machine import I2C
 import ens160sciosense
 from sensor_pack.bus_service import I2cAdapter
-import time, sys
+import time
 
 if __name__ == '__main__':
     # пожалуйста установите выводы scl и sda в конструкторе для вашей платы, иначе ничего не заработает!
