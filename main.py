@@ -7,7 +7,7 @@
 from machine import I2C
 import ens160sciosense
 from sensor_pack.bus_service import I2cAdapter
-import time
+import time, sys
 
 if __name__ == '__main__':
     # пожалуйста установите выводы scl и sda в конструкторе для вашей платы, иначе ничего не заработает!
@@ -24,8 +24,12 @@ if __name__ == '__main__':
     # то проверьте все соединения.
     gas_sens.set_mode(0x02)
     gs_id = gas_sens.get_id()
+    print(f"Sensor ID: {hex(gs_id)}")
+        
     fw = gas_sens.get_firmware_version()
-    print(f"Sensor ID: {hex(gs_id)}\tFirmware version: {fw}")
+    print(f"Firmware version: {fw}")
+    st = gas_sens.get_status()
+    print(f"Status: {hex(st)}")
 
     for eco2, tvoc, aqi in gas_sens:
         print(f"CO2: {eco2}\tTVOC: {tvoc}\tAQI: {aqi}")
