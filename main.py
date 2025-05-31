@@ -1,36 +1,47 @@
 # micropython
-# mail: goctaprog@gmail.com
 # MIT license
 
 
 # Please read this before use!: https://www.sciosense.com/products/environmental-sensors/digital-multi-gas-sensor/
-from machine import I2C
+from machine import I2C, Pin
 import ens160sciosense
-from sensor_pack.bus_service import I2cAdapter
+from sensor_pack_2.bus_service import I2cAdapter
 import time
 
 if __name__ == '__main__':
     # пожалуйста установите выводы scl и sda в конструкторе для вашей платы, иначе ничего не заработает!
     # please set scl and sda pins for your board, otherwise nothing will work!
     # https://docs.micropython.org/en/latest/library/machine.I2C.html#machine-i2c
-    # i2c = I2C(0, scl=Pin(13), sda=Pin(12), freq=400_000) № для примера
-    # bus =  I2C(scl=Pin(4), sda=Pin(5), freq=100000)   # на esp8266    !
-    i2c = I2C(0, freq=400_000)  # on Arduino Nano RP2040 Connect tested
+    # i2c = I2C(id=1, scl=Pin(27), sda=Pin(26), freq=400_000)  # on Arduino Nano RP2040 Connect and Pico W tested!
+    # i2c = I2C(id=1, scl=Pin(7), sda=Pin(6), freq=400_000)  # create I2C peripheral at frequency of 400kHz
+    i2c = I2C(id=1, scl=Pin(7), sda=Pin(6), freq=400_000)
     adaptor = I2cAdapter(i2c)
     # ps - pressure sensor
-    gas_sens = ens160sciosense.Ens160(adaptor)
+    sensor = ens160sciosense.Ens160(adaptor)
 
-    # если у вас посыпались исключения, чего у меня на макетной плате с али и проводами МГТВ не наблюдается,
-    # то проверьте все соединения.
-    gas_sens.set_mode(0x02)
-    gs_id = gas_sens.get_id()
-    print(f"Sensor ID: {hex(gs_id)}")
+    # если у вас посыпались исключения, то проверьте все соединения.
+    sensor.start_measurement(start=False)
+    print(f"Sensor ID: {sensor.get_id():X}")
         
-    fw = gas_sens.get_firmware_version()
+    fw = sensor.get_firmware_version()
     print(f"Firmware version: {fw}")
-    st = gas_sens.get_status()
-    print(f"Status: {hex(st)}")
+    st = sensor.get_data_status(raw=True)
+    print(f"Status: {st:X}")
+    st = sensor.get_data_status(raw=False)
+    print(f"Status: {st}")
+    #
+    cfg_raw = sensor.get_config(raw=True)
+    cfg = sensor.get_config(raw=False)
+    print(f"raw config: {cfg_raw:X}")
+    print(f"config: {cfg}")
 
-    for eco2, tvoc, aqi in gas_sens:
-        print(f"CO2: {eco2}\tTVOC: {tvoc}\tAQI: {aqi}")
-        time.sleep_ms(1000)
+    wt = sensor.get_conversion_cycle_time()
+    sensor.start_measurement(start=True)
+    time.sleep_ms(wt)
+    #
+    for air_params in sensor:
+        if not air_params is None:
+            print(f"{air_params}")
+        else:
+            print("no data!")
+        time.sleep_ms(wt)
