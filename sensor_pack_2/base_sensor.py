@@ -231,6 +231,10 @@ class IBaseSensorEx:
         Если raw в Истина, то возвращается сырое/не обработанное значение состояния!"""
         raise NotImplemented
 
+    #def get_config(self, raw: bool = True):
+    #    """Возвращает текущие настройки датчика. Если raw - в Истина, то возвращается int, иначе произвольный тип."""
+    #    raise NotImplemented
+
     def is_single_shot_mode(self) -> bool:
         """Возвращает Истина, когда датчик находится в режиме однократных измерений,
         каждое из которых запускается методом start_measurement"""

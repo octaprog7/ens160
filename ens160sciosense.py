@@ -227,7 +227,7 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
         0 - eCO2;
         1 - TVOC;
         2 - AQI;
-        None - все!"""
+        None - кортеж ens160_air_params;"""
         if 0 == value_index:
             return self._get_eco2()
         if 1 == value_index:
