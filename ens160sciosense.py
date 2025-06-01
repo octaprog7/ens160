@@ -40,6 +40,7 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
 
     @staticmethod
     def _to_raw_config(cfg: ens160_config) -> int:
+        """Преобразует именованныый кортеж ens160_config в int"""
         n_bits = 6, 5, 3, 1, 0
         val_gen = (int(cfg[i]) << n_bits[i] for i in range(len(n_bits)))
         _cfg = sum(map(lambda x: x, val_gen))
@@ -47,6 +48,7 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
 
     @staticmethod
     def _to_config(raw_cfg: int) -> ens160_config:
+        """Преобразует int в именованныый кортеж ens160_config"""
         n_bits = 6, 5, 3, 1, 0
         mask_gen = (1 << n_bit for n_bit in n_bits)
         bit_val_gen = (bool(next(mask_gen) & raw_cfg) for _ in n_bits)
@@ -55,6 +57,7 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
 
     @staticmethod
     def _to_status(st: int) -> ens160_status:
+        """Преобразует int в именованныый кортеж ens160_status"""
         n_bits = 7, 6, 1, 0
         mask_gen = (1 << n_bit for n_bit in n_bits)
         bit_val_gen = (bool(next(mask_gen) & st) for _ in n_bits)
@@ -139,8 +142,13 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
 
     def set_config(self, new_config: [int, ens160_config]):
         """Настраивает датчик. Смотри таблицу 19 в официальной документации"""
+        raw_cfg = 0
         if isinstance(new_config, int):
-            self._connector.write_reg(0x11, new_config, 1)
+            raw_cfg = new_config
+        if isinstance(new_config, ens160_config):
+            raw_cfg = Ens160._to_raw_config(new_config)
+        #
+        self._connector.write_reg(0x11, raw_cfg, 1)
 
     def _exec_cmd(self, cmd: int) -> bytes:
         """Для внутреннего использования!
