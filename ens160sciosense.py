@@ -10,7 +10,7 @@ ens160_firmware_version = namedtuple("ens160_firmware_version", "major minor rel
 # eCO2 - количество эквивалента углекислого газа
 # TVOC - общие летучие органические соединения. Это термин, используемый для обозначения общей концентрации различных
 #        летучих органических соединений в воздухе, которые могут присутствовать в помещении или в окружающей среде.
-# AQI  - расчетный индекс качества воздуха в соответствии с UBA(!)
+# AQI  - расчетный индекс качества воздуха в соответствии с UBA(UmweltBundesAmt – German Federal Environmental Agency)
 ens160_air_params = namedtuple("ens160_air_params", "eco2 tvoc aqi")
 # statas (bit 7) - High indicates that an OPMODE is running
 # stater (bit 6) - High indicates that an error is detected. E.g. Invalid Operating Mode has been selected.
@@ -256,7 +256,9 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
     # Iterator
     def __next__(self) -> [None, ens160_air_params]:
         """Механизм итератора.
-        Возвращает кортеж: CO2 [ppm], ЛОС[ppm], Индекс Качества Воздуха. 1(прекрасно)..5(кошмар)"""
+        ЛОС - Летучие Органические Соединения.
+        Возвращает кортеж: CO2 [ppm], ЛОС[ppm], Индекс Качества Воздуха. 1(прекрасно)..5(кошмар)
+        см. описание кортежа ens160_air_params выше."""
         if not self.is_continuously_mode():
             return None
         status = self.get_data_status(raw=False)
