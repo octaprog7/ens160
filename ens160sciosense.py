@@ -259,4 +259,6 @@ class Ens160(IBaseSensorEx, IDentifier, Iterator):
         Возвращает кортеж: CO2 [ppm], ЛОС[ppm], Индекс Качества Воздуха. 1(прекрасно)..5(кошмар)"""
         if not self.is_continuously_mode():
             return None
-        return self.get_measurement_value(None)
+        status = self.get_data_status(raw=False)
+        if status.new_data: # новые данные готовы для чтения!
+            return self.get_measurement_value(None)
