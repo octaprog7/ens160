@@ -1,16 +1,68 @@
 # micropython
 # MIT license
-# Copyright (c) 2022 Roman Shevchik   goctaprog@gmail.com
+# Copyright (c) 2022 Roman Shevchik   kolbasilyvasily@yandex.ru
 
-from sensor_pack import bus_service
-from sensor_pack.base_sensor import BaseSensor, Iterator, check_value
+from collections import namedtuple
+from sensor_pack_2 import bus_service
+from sensor_pack_2.base_sensor import IBaseSensorEx, DeviceEx, IDentifier, Iterator, check_value
+
+ens160_firmware_version = namedtuple("ens160_firmware_version", "major minor release")
+# eCO2 - количество эквивалента углекислого газа
+# TVOC - общие летучие органические соединения. Это термин, используемый для обозначения общей концентрации различных
+#        летучих органических соединений в воздухе, которые могут присутствовать в помещении или в окружающей среде.
+# AQI  - расчетный индекс качества воздуха в соответствии с UBA(UmweltBundesAmt – German Federal Environmental Agency)
+ens160_air_params = namedtuple("ens160_air_params", "eco2 tvoc aqi")
+# statas (bit 7) - High indicates that an OPMODE is running
+# stater (bit 6) - High indicates that an error is detected. E.g. Invalid Operating Mode has been selected.
+# validity_flag (bit 2, 3) - Status: 0 - normal operation; 1 - Warm-Up phase; 2 - Initial Start-Up phase; 3 - Invalid output;
+# new_data (bit 1) - High indicates that a new data is available in the DATA_x registers. Cleared automatically at first DATA_x read.
+# new_gpr (bit 0) - High indicates that a new data is available in the GPR_READx registers. Cleared automatically at first GPR_READx read.
+ens160_status = namedtuple("ens160_status", "stat_as stat_error validity_flag new_data new_gpr")
+# int_pol (bit 6) - INTn pin polarity: 0- Active low (Default); 1 - Active high
+# int_cfg (bit 5) - INTn pin drive: 0 - Open drain; 1 - Push / Pull
+# int_gpr (bit 3) - INTn pin asserted when new data is presented in the General Purpose Read Registers
+# int_dat (bit 1) - INTn pin asserted when new data is presented in the DATA_XXX Registers
+# int_en  (bit 0)- INTn pin is enabled for the functions above
+ens160_config = namedtuple("ens160_config", "int_pol int_cfg int_gpr int_dat int_en")
 
 
-class Ens160(BaseSensor, Iterator):
-    """Class for work with Digital Metal-Oxide Multi-Gas Sensor ENS160
-    Класс для работы с цифровым металлооксидным мультигазовым датчиком ENS160.
-    https://www.sciosense.com/products/environmental-sensors/digital-multi-gas-sensor/"""
+#def _to_raw_status(st: ens160_status) -> int:
+#    n_bits = 7, 6, 2, 1, 0
+#    val_gen = (int(st[i]) << n_bits[i] for i in range(len(n_bits)))
+#    _cfg = 0b1100_0011 & sum(map(lambda x: x, val_gen))
+#    return _cfg | (st.validity_flag << 2)
+
+
+
+class Ens160(IBaseSensorEx, IDentifier, Iterator):
+    """Класс для работы с цифровым металоксидным мультигазовым датчиком ENS160."""
     _CRC_POLY = 0x1D
+
+    @staticmethod
+    def _to_raw_config(cfg: ens160_config) -> int:
+        """Преобразует именованныый кортеж ens160_config в int"""
+        n_bits = 6, 5, 3, 1, 0
+        val_gen = (int(cfg[i]) << n_bits[i] for i in range(len(n_bits)))
+        _cfg = sum(map(lambda x: x, val_gen))
+        return _cfg
+
+    @staticmethod
+    def _to_config(raw_cfg: int) -> ens160_config:
+        """Преобразует int в именованныый кортеж ens160_config"""
+        n_bits = 6, 5, 3, 1, 0
+        mask_gen = (1 << n_bit for n_bit in n_bits)
+        bit_val_gen = (bool(next(mask_gen) & raw_cfg) for _ in n_bits)
+        return ens160_config(int_pol=next(bit_val_gen), int_cfg=next(bit_val_gen), int_gpr=next(bit_val_gen),
+                             int_dat=next(bit_val_gen), int_en=next(bit_val_gen))
+
+    @staticmethod
+    def _to_status(st: int) -> ens160_status:
+        """Преобразует int в именованныый кортеж ens160_status"""
+        n_bits = 7, 6, 1, 0
+        mask_gen = (1 << n_bit for n_bit in n_bits)
+        bit_val_gen = (bool(next(mask_gen) & st) for _ in n_bits)
+        return ens160_status(stat_as=next(bit_val_gen), stat_error=next(bit_val_gen), validity_flag=(0b1100 & st) >> 2,
+                             new_data=next(bit_val_gen), new_gpr=next(bit_val_gen))
 
     @staticmethod
     def _crc8(sequence, polynomial: int, init_value: int):
@@ -27,153 +79,188 @@ class Ens160(BaseSensor, Iterator):
         return crc
 
     def __init__(self, adapter: bus_service.I2cAdapter, address: int = 0x52, check_crc: bool = True):
-        """Адаптер шины, адрес на шине, проверять CRC или нет.
-        Bus adapter, bus address, check CRC or not"""
-        super().__init__(adapter, address, False)
-        self.check_crc = check_crc
+        """Адаптер шины, адрес на шине, проверять CRC или нет."""
+        self._connector = DeviceEx(adapter=adapter, address=address, big_byte_order=False)
+        self._check_crc = check_crc
 
     def _read_register(self, reg_addr, bytes_count=2) -> bytes:
         """считывает из регистра датчика значение.
         bytes_count - число считываемых байт, начиная с адреса reg_addr"""
         before = 0
-        if self.check_crc: 
-            before = self._get_last_checksum()   # read crc from sensor
-        b = self.adapter.read_register(self.address, reg_addr, bytes_count)
-        if self.check_crc:
+        if self._check_crc:
+            before = self._get_last_checksum()   # читаю crc с датчика
+        conn = self._connector
+        b = conn.read_reg(reg_addr, bytes_count)
+        if self._check_crc:
             if 0 <= reg_addr < 0x38:
-                crc = Ens160._crc8(b, Ens160._CRC_POLY, before)  # calculate crc from readed data
-                after = self._get_last_checksum()   # read crc from sensor
-                if crc != after:  # compare calculated crc and readed from sensor
+                crc = Ens160._crc8(b, Ens160._CRC_POLY, before)  # вычисляю crc из считанных данных
+                after = self._get_last_checksum()   # читаю crc с датчика
+                if crc != after:  # сравниваю рассчитанный crc и считанный с датчика
                     raise IOError(f"Input data broken! Bad CRC! Calculated crc8: {hex(crc)} != {hex(after)}")
                 
         return b
 
-    def _write_register(self, reg_addr, value: int, bytes_count=2) -> int:
-        """записывает данные value в датчик, по адресу reg_addr.
-        bytes_count - кол-во записываемых байт, начиная с адреса reg_addr"""
-        byte_order = self._get_byteorder_as_str()[0]
-        return self.adapter.write_register(self.address, reg_addr, value, bytes_count, byte_order)
-
     def __del__(self):
-        self.set_mode(0x00)     # go to deep sleep
+        # деструктор не вызывается MicroPython
+        self._set_mode(0x00)     # уходим в deep sleep
 
+    # Identifier
     def get_id(self) -> int:
-        """Return part number of the ENS160.
-        Возвращает какое-то число (the part number) из датчика"""
+        """Возвращает 'the part number' из датчика"""
         reg_val = self._read_register(0x00, 2)
-        return self.unpack("H", reg_val)[0]
+        return self._connector.unpack("H", reg_val)[0]
 
     def soft_reset(self):
-        """Software reset.
-        Програмный сброс датчика"""
-        self.set_mode(0xF0)
+        """Програмный сброс датчика"""
+        self._set_mode(0xF0)
 
-    def set_mode(self, new_mode: int):
-        """Set sensor mode.
-        Устанавливает режим работы датчика.
-        Pls see 16.2.2 OPMODE (Address 0x10) in official documentation
-        Operating mode:
-                7:0     Description
+    def _set_mode(self, new_mode: int):
+        """Устанавливает режим работы датчика.
+        см. 16.2.2 OPMODE (адрес 0x10) в официальной документации.
+        Режим работы:
+                7:0     Описание
                 --------------------------------------------
-                0x00:   DEEP SLEEP mode (low-power standby) (режим ожидания)
-                0x01:   IDLE mode (low power)   (экономный режим работы, для батарейной техники)
-                0x02:   STANDARD Gas Sensing Mode (нормальный режим)
-                0xF0:   RESET"""
+                0x00:   Режим DEEP SLEEP (режим ожидания с низким энергопотреблением)
+                0x01:   Режим IDLE (низкое энергопотребление)
+                0x02:   СТАНДАРТНЫЙ режим обнаружения газа (нормальный режим)
+                0xF0:   Програмный сброс"""
         nm = check_value(new_mode, (0, 1, 2, 0xF0), f"Invalid mode value: {new_mode}")
-        self._write_register(0x10, nm, 1)
+        self._connector.write_reg(0x10, nm, 1)
 
-    def get_mode(self) -> int:
-        """Return current operation mode of sensor
-        Возвращает текущий режим работы датчика"""
+    def _get_mode(self) -> int:
+        """Возвращает текущий режим работы датчика"""
         reg_val = self._read_register(0x10, 1)
-        return self.unpack("B", reg_val)[0]
+        return reg_val[0]
 
-    def get_config(self) -> int:
-        """Return current config from sensor.
-        Pls see Table 19: Register CONFIG in official documentation!
-        Возвращает текущие настройки датчика. Смотри таблицу 19 в официальной документации"""
-        reg_val = self._read_register(0x11, 1)
-        return self.unpack("B", reg_val)[0]
+    def get_config(self, raw: bool = True) -> [int, ens160_config]:
+        """Возвращает текущие настройки датчика. Смотри таблицу 19 в официальной документации.
+        если raw - в Истина, то возвращается int, иначе ens160_config."""
+        raw_val = self._read_register(0x11, 1)[0]
+        if raw:
+            return raw_val
+        return Ens160._to_config(raw_val)
 
-    def set_config(self, new_config: int) -> int:
-        """Set current config sensor.
-        Pls see Table 19: Register CONFIG in official documentation!
-         Настраивает датчик. Смотри таблицу 19 в официальной документации"""
-        return self._write_register(0x11, new_config, 1)
+    def set_config(self, new_config: [int, ens160_config]):
+        """Настраивает датчик. Смотри таблицу 19 в официальной документации"""
+        raw_cfg = 0
+        if isinstance(new_config, int):
+            raw_cfg = new_config
+        if isinstance(new_config, ens160_config):
+            raw_cfg = Ens160._to_raw_config(new_config)
+        #
+        self._connector.write_reg(0x11, raw_cfg, 1)
 
     def _exec_cmd(self, cmd: int) -> bytes:
         """Для внутреннего использования!
-        For internal use!"""
+        0x00: ENS160_COMMAND_NOP;
+        0x0E: ENS160_COMMAND_GET_APPVER – Get FW Version;
+        0xCC: ENS160_COMMAND_CLRGPR Clears GPR Read Registers;"""
         check_value(cmd, (0x00, 0x0E, 0xCC), f"Invalid command code: {cmd}")
-        self._write_register(0x12, cmd, 1)
+        self._connector.write_reg(0x12, cmd, 1)
         return self._read_register(0x48, 8)
 
     def set_ambient_temp(self, value_in_celsius: float):
-        """write ambient temperature data to ENS160 for compensation. value in Celsius.
-        This value must be read from the temperature sensor! It must be correct!
-        Записывает в ENS160 датчик температуру окружающей среды, для компенсации!
+        """Записывает в ENS160 датчик температуру окружающей среды, для компенсации!
         Значение в градусах Цельсия! Это значение должно быть считано с датчика температуры!
-        Оно должно быть правильным и в допустимом диапазоне!
-        """
+        Оно должно быть правильным и в допустимом диапазоне!"""
         t = int(64*(273.15+value_in_celsius))
-        self._write_register(0x13, t, 2)
+        self._connector.write_reg(0x13, t, 2)
 
     def set_humidity(self, rel_hum: int):
-        """write relative humidity data to ENS160 for compensation. value in percent.
-        Записывает в ENS160 датчик относительную влажность, для компенсации! значение в процентах!"""
+        """Записывает в ENS160 датчик относительную влажность, для компенсации! значение в процентах!"""
         check_value(rel_hum, range(101), f"Invalid humidity value: {rel_hum}")
-        self._write_register(0x15, rel_hum << 9, 2)
+        self._connector.write_reg(0x15, rel_hum << 9, 2)
 
-    def get_status(self) -> int:
-        """indicates the current status of the ENS160.
-        Возвращает текущий статус ENS160 в виде байта
-        Pls read Table 26: Register DEVICE_STATUS from official documentation!"""
-        reg_val = self._read_register(0x20, 1)
-        return self.unpack("B", reg_val)[0]
+    def _get_status(self, raw: bool = True) -> [int, ens160_status]:
+        """Возвращает текущее состояние ENS160 в виде байта
+        Пожалуйста, прочтите Таблицу 26: Регистр DEVICE_STATUS из официальной документации!"""
+        reg_val = self._read_register(0x20, 1)[0]
+        if raw:
+            return reg_val
+        return Ens160._to_status(reg_val)
 
-    def get_air_quality_index(self) -> int:
-        """reports the calculated Air Quality Index according to the UBA.
-        Возвращает расчетный индекс качества воздуха в соответствии с UBA. 1(прекрасно)..5(кошмар))
-        See section “AQI-UBA – UBA Air Quality Index” for further information. From official documentation!"""
+    def _get_aqi(self) -> int:
+        """Возвращает расчетный индекс качества воздуха в соответствии с UBA. 1(прекрасно)..5(кошмар))
+        Дополнительную информацию см. в разделе «AQI-UBA – Индекс качества воздуха UBA». Из официальной документации!"""
         reg_val = self._read_register(0x21, 1)
-        return self.unpack("B", reg_val)[0] & 0x07
+        return 0x07 & reg_val[0]
 
-    def get_tvoc(self) -> int:
-        """reports the calculated TVOC concentration in ppb.
-        Возвращает расчетную концентрацию Летучих Органических Соединений (ЛОС) в частях на миллион (ppm)
-        See section “TVOC – Total Volatile Organic Compounds” for further information. From official documentation!"""
+    def _get_tvoc(self) -> int:
+        """Возвращает расчетную концентрацию Летучих Органических Соединений (ЛОС) в частях на миллион (ppm)
+        Дополнительную информацию см. в разделе «TVOC – Общие летучие органические соединения». Из официальной документации!"""
         reg_val = self._read_register(0x22, 2)
-        return self.unpack("H", reg_val)[0]
+        return self._connector.unpack("H", reg_val)[0]
 
-    def get_eco2(self) -> int:
-        """reports the calculated equivalent CO 2 -concentration in ppm, based on the detected VOCs and hydrogen.
-        Возвращает расчетную эквивалентную концентрацию CO2 в частях на миллион [ppm] на
+    def _get_eco2(self) -> int:
+        """Возвращает расчетную эквивалентную концентрацию CO2 в частях на миллион [ppm] на
         основе обнаруженных летучих органических соединений (ЛОС) и водорода.
-        See section “eCO2 – Equivalent CO2” for further information. From official documentation!"""
+        Дополнительную информацию см. в разделе «eCO2 – Эквивалент CO2». Из официальной документации!"""
         reg_val = self._read_register(0x24, 2)
-        return self.unpack("H", reg_val)[0]
+        return self._connector.unpack("H", reg_val)[0]
 
     def _get_last_checksum(self) -> int:
-        """Reports the calculated checksum of the previous DATA_* read transaction (of n-bytes).
-        It can be read as a separate transaction, if required, to check the validity of the previous
-        transaction. The value should be compared with the number calculated by the Host system on the incoming Data.
-
-        Возвращает рассчитанную контрольную сумму предыдущей транзакции чтения n-байт.
+        """Возвращает рассчитанную контрольную сумму предыдущей транзакции чтения n-байт.
         При необходимости её можно прочитать как отдельную транзакцию, чтобы проверить правильность предыдущей
-        операции чтения. Значение следует сравнить с числом, рассчитанным хост-системой для входящих данных!
-        """
+        операции чтения. Значение следует сравнить с числом, рассчитанным хост-системой для входящих данных!"""
         # читаю 1 байт crc из датчика
-        return self.adapter.read_register(self.address, 0x38, 1)[0]
+        return self._connector.read_reg(0x38, 1)[0]
 
-    def get_firmware_version(self) -> tuple:
-        """Return the firmware version of the ENS160 as tuple (Major, Minor, Release).
-        Возвращает версию прошивки ENS160 в виде кортежа (Major, Minor, Release)"""
+    def get_firmware_version(self) -> ens160_firmware_version:
+        """Возвращает версию прошивки ENS160 в виде кортежа ens160_firmware_version"""
         b = self._exec_cmd(0x0E)
-        return b[4], b[5], b[6]
+        return ens160_firmware_version(major=b[4], minor=b[5], release=b[6])
 
-    def __next__(self) -> tuple:
+    # IBaseSensorEx
+    def get_conversion_cycle_time(self) -> int:
+        """Возвращает время в мс преобразования сигнала в цифровой код и готовности его для чтения по шине!
+        Для текущих настроек датчика. При изменении настроек следует заново вызвать этот метод!"""
+        return 1000
+
+    def start_measurement(self, start: bool = True):
+        """Настраивает параметры датчика и запускает процесс измерения.
+        Если start в Истина, то датчик переводится в режим измерения, иначе датчик переводится в режим ожидания (IDLE)"""
+        _mode = 2 if start else 1
+        self._set_mode(_mode)
+
+    def get_measurement_value(self, value_index: [int, None]) -> [int, ens160_air_params]:
+        """Возвращает измеренное датчиком значение(значения) по его индексу/номеру.
+        0 - eCO2;
+        1 - TVOC;
+        2 - AQI;
+        None - кортеж ens160_air_params;"""
+        if 0 == value_index:
+            return self._get_eco2()
+        if 1 == value_index:
+            return self._get_tvoc()
+        if 2 == value_index:
+            return self._get_aqi()
+        #
+        if value_index is None:
+            return ens160_air_params(eco2=self._get_eco2(), tvoc=self._get_tvoc(), aqi=self._get_aqi())
+
+    def get_data_status(self, raw: bool = True) -> ens160_status:
+        """Возвращает состояние готовности данных для считывания?
+        Тип возвращаемого значения выбирайте сами!"""
+        return self._get_status(raw=raw)
+
+    def is_single_shot_mode(self) -> bool:
+        """Возвращает Истина, когда датчик находится в режиме однократных измерений,
+        каждое из которых запускается методом start_measurement"""
+        return False
+
+    def is_continuously_mode(self) -> bool:
+        """Возвращает Истина, когда датчик находится в режиме многократных измерений,
+        производимых автоматически. Процесс запускается методом start_measurement"""
+        return 0x02 == self._get_mode()
+
+    # Iterator
+    def __next__(self) -> [None, ens160_air_params]:
         """Механизм итератора.
+        ЛОС - Летучие Органические Соединения.
         Возвращает кортеж: CO2 [ppm], ЛОС[ppm], Индекс Качества Воздуха. 1(прекрасно)..5(кошмар)
-        Iterator mechanism.
-        Returns a tuple: CO2 [ppm], VOC[ppm], Air Quality Index. 1(great)..5(nightmare)"""
-        return self.get_eco2(), self.get_tvoc(), self.get_air_quality_index()
+        см. описание кортежа ens160_air_params выше."""
+        if not self.is_continuously_mode():
+            return None
+        status = self.get_data_status(raw=False)
+        if status.new_data: # новые данные готовы для чтения!
+            return self.get_measurement_value(None)
