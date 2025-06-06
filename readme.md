@@ -13,4 +13,3 @@ Then open main.py in your IDE and run it.
 ![alt text](https://github.com/octaprog7/ens160/blob/master/brd_ens160.png)
 ## CO2 and TVOC graph
 ![alt text](https://github.com/octaprog7/ens160/blob/master/co2_graph.png)
-The sharp increase in CO2 and VOC content is due to the exhalation of used air from the lungs to the sensor.
