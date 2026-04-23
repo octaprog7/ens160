@@ -1,3 +1,22 @@
+MPY: soft reboot
+Sensor ID: 0x0160
+Firmware: major=5, minor=4, release=6
+Measurements started. Cycle time: 1000 ms
+Waiting for valid data...
+[1] Operating OK | eCO2: 0 ppm | TVOC: 0 ppb | AQI: 0
+[2] Operating OK | Validity: 0 | NewData: False
+[3] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[4] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[5] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[6] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[7] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[8] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[9] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[10] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[11] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[12] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+[13] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
+...
 [3962] Operating OK | eCO2: 465 ppm | TVOC: 54 ppb | AQI: 1
 [3963] Operating OK | eCO2: 457 ppm | TVOC: 50 ppb | AQI: 1
 [3964] Operating OK | eCO2: 494 ppm | TVOC: 69 ppb | AQI: 2
