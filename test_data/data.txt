@@ -17,6 +17,7 @@ Waiting for valid data...
 [12] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
 [13] Initial Start-Up (~1 hour) | Validity: 2 | NewData: True
 ...
+# на кухне ничего не готовят!
 [3962] Operating OK | eCO2: 465 ppm | TVOC: 54 ppb | AQI: 1
 [3963] Operating OK | eCO2: 457 ppm | TVOC: 50 ppb | AQI: 1
 [3964] Operating OK | eCO2: 494 ppm | TVOC: 69 ppb | AQI: 2
@@ -47,3 +48,26 @@ Waiting for valid data...
 [3989] Operating OK | eCO2: 444 ppm | TVOC: 44 ppb | AQI: 1
 [3990] Operating OK | eCO2: 479 ppm | TVOC: 61 ppb | AQI: 1
 [3991] Operating OK | eCO2: 436 ppm | TVOC: 40 ppb | AQI: 1
+...
+# на кухне, на газу жарят мясо. Посмотрите на eCO2 и AQI!!!
+
+[7766] Operating OK | eCO2: 700 ppm | TVOC: 205 ppb | AQI: 2
+[7767] Operating OK | eCO2: 694 ppm | TVOC: 201 ppb | AQI: 2
+[7768] Operating OK | eCO2: 744 ppm | TVOC: 243 ppb | AQI: 3
+[7769] Operating OK | eCO2: 704 ppm | TVOC: 209 ppb | AQI: 2
+[7770] Operating OK | eCO2: 678 ppm | TVOC: 188 ppb | AQI: 2
+[7771] Operating OK | eCO2: 706 ppm | TVOC: 210 ppb | AQI: 2
+[7772] Operating OK | eCO2: 729 ppm | TVOC: 230 ppb | AQI: 3
+[7773] Operating OK | eCO2: 707 ppm | TVOC: 212 ppb | AQI: 2
+[7774] Operating OK | eCO2: 722 ppm | TVOC: 224 ppb | AQI: 3
+[7775] Operating OK | eCO2: 721 ppm | TVOC: 223 ppb | AQI: 3
+[7776] Operating OK | eCO2: 736 ppm | TVOC: 236 ppb | AQI: 3
+[7777] Operating OK | eCO2: 710 ppm | TVOC: 214 ppb | AQI: 2
+[7778] Operating OK | Validity: 0 | NewData: False
+[7779] Operating OK | eCO2: 724 ppm | TVOC: 226 ppb | AQI: 3
+[7780] Operating OK | eCO2: 708 ppm | TVOC: 212 ppb | AQI: 2
+[7781] Operating OK | eCO2: 746 ppm | TVOC: 245 ppb | AQI: 3
+[7782] Operating OK | eCO2: 722 ppm | TVOC: 224 ppb | AQI: 3
+[7783] Operating OK | eCO2: 727 ppm | TVOC: 229 ppb | AQI: 3
+[7784] Operating OK | eCO2: 735 ppm | TVOC: 235 ppb | AQI: 3
+[7785] Operating OK | eCO2: 733 ppm | TVOC: 234 ppb | AQI: 3
