@@ -81,3 +81,60 @@ ENS160 — это цифровой мультигазовый датчик, сп
 ```
 
 Просто оставьте плату включённой на ~1.5 часа — и датчик начнёт отдавать точные данные о качестве воздуха!
+
+## Качество воздуха и приготовление пищи
+### На кухне ничего не готовят
+[3962] Operating OK | eCO2: 465 ppm | TVOC: 54 ppb | AQI: 1
+[3963] Operating OK | eCO2: 457 ppm | TVOC: 50 ppb | AQI: 1
+[3964] Operating OK | eCO2: 494 ppm | TVOC: 69 ppb | AQI: 2
+[3965] Operating OK | eCO2: 446 ppm | TVOC: 45 ppb | AQI: 1
+[3966] Operating OK | eCO2: 473 ppm | TVOC: 58 ppb | AQI: 1
+[3967] Operating OK | eCO2: 493 ppm | TVOC: 69 ppb | AQI: 2
+[3968] Operating OK | eCO2: 480 ppm | TVOC: 62 ppb | AQI: 1
+[3969] Operating OK | eCO2: 455 ppm | TVOC: 49 ppb | AQI: 1
+[3970] Operating OK | eCO2: 489 ppm | TVOC: 66 ppb | AQI: 2
+[3971] Operating OK | eCO2: 461 ppm | TVOC: 52 ppb | AQI: 1
+[3972] Operating OK | Validity: 0 | NewData: False
+[3973] Operating OK | eCO2: 478 ppm | TVOC: 61 ppb | AQI: 1
+[3974] Operating OK | eCO2: 470 ppm | TVOC: 57 ppb | AQI: 1
+[3975] Operating OK | eCO2: 480 ppm | TVOC: 61 ppb | AQI: 1
+[3976] Operating OK | eCO2: 488 ppm | TVOC: 66 ppb | AQI: 2
+[3977] Operating OK | eCO2: 459 ppm | TVOC: 51 ppb | AQI: 1
+[3978] Operating OK | eCO2: 452 ppm | TVOC: 48 ppb | AQI: 1
+[3979] Operating OK | eCO2: 462 ppm | TVOC: 52 ppb | AQI: 1
+[3980] Operating OK | eCO2: 467 ppm | TVOC: 55 ppb | AQI: 1
+[3981] Operating OK | eCO2: 470 ppm | TVOC: 57 ppb | AQI: 1
+[3982] Operating OK | eCO2: 470 ppm | TVOC: 57 ppb | AQI: 1
+[3983] Operating OK | eCO2: 451 ppm | TVOC: 47 ppb | AQI: 1
+[3984] Operating OK | eCO2: 444 ppm | TVOC: 44 ppb | AQI: 1
+[3985] Operating OK | eCO2: 450 ppm | TVOC: 47 ppb | AQI: 1
+[3986] Operating OK | eCO2: 467 ppm | TVOC: 55 ppb | AQI: 1
+[3987] Operating OK | eCO2: 468 ppm | TVOC: 55 ppb | AQI: 1
+[3988] Operating OK | eCO2: 452 ppm | TVOC: 48 ppb | AQI: 1
+[3989] Operating OK | eCO2: 444 ppm | TVOC: 44 ppb | AQI: 1
+[3990] Operating OK | eCO2: 479 ppm | TVOC: 61 ppb | AQI: 1
+[3991] Operating OK | eCO2: 436 ppm | TVOC: 40 ppb | AQI: 1
+...
+
+### На кухне, на газу жарят мясо!!!
+
+[7766] Operating OK | eCO2: 700 ppm | TVOC: 205 ppb | AQI: 2
+[7767] Operating OK | eCO2: 694 ppm | TVOC: 201 ppb | AQI: 2
+[7768] Operating OK | eCO2: 744 ppm | TVOC: 243 ppb | AQI: 3
+[7769] Operating OK | eCO2: 704 ppm | TVOC: 209 ppb | AQI: 2
+[7770] Operating OK | eCO2: 678 ppm | TVOC: 188 ppb | AQI: 2
+[7771] Operating OK | eCO2: 706 ppm | TVOC: 210 ppb | AQI: 2
+[7772] Operating OK | eCO2: 729 ppm | TVOC: 230 ppb | AQI: 3
+[7773] Operating OK | eCO2: 707 ppm | TVOC: 212 ppb | AQI: 2
+[7774] Operating OK | eCO2: 722 ppm | TVOC: 224 ppb | AQI: 3
+[7775] Operating OK | eCO2: 721 ppm | TVOC: 223 ppb | AQI: 3
+[7776] Operating OK | eCO2: 736 ppm | TVOC: 236 ppb | AQI: 3
+[7777] Operating OK | eCO2: 710 ppm | TVOC: 214 ppb | AQI: 2
+[7778] Operating OK | Validity: 0 | NewData: False
+[7779] Operating OK | eCO2: 724 ppm | TVOC: 226 ppb | AQI: 3
+[7780] Operating OK | eCO2: 708 ppm | TVOC: 212 ppb | AQI: 2
+[7781] Operating OK | eCO2: 746 ppm | TVOC: 245 ppb | AQI: 3
+[7782] Operating OK | eCO2: 722 ppm | TVOC: 224 ppb | AQI: 3
+[7783] Operating OK | eCO2: 727 ppm | TVOC: 229 ppb | AQI: 3
+[7784] Operating OK | eCO2: 735 ppm | TVOC: 235 ppb | AQI: 3
+[7785] Operating OK | eCO2: 733 ppm | TVOC: 234 ppb | AQI: 3
