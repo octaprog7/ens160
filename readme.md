@@ -84,6 +84,7 @@ ENS160 — это цифровой мультигазовый датчик, сп
 
 ## Качество воздуха и приготовление пищи
 ### На кухне ничего не готовят
+```console
 [3962] Operating OK | eCO2: 465 ppm | TVOC: 54 ppb | AQI: 1
 [3963] Operating OK | eCO2: 457 ppm | TVOC: 50 ppb | AQI: 1
 [3964] Operating OK | eCO2: 494 ppm | TVOC: 69 ppb | AQI: 2
@@ -115,9 +116,9 @@ ENS160 — это цифровой мультигазовый датчик, сп
 [3990] Operating OK | eCO2: 479 ppm | TVOC: 61 ppb | AQI: 1
 [3991] Operating OK | eCO2: 436 ppm | TVOC: 40 ppb | AQI: 1
 ...
-
+```
 ### На кухне, на газу жарят мясо!!!
-
+```console
 [7766] Operating OK | eCO2: 700 ppm | TVOC: 205 ppb | AQI: 2
 [7767] Operating OK | eCO2: 694 ppm | TVOC: 201 ppb | AQI: 2
 [7768] Operating OK | eCO2: 744 ppm | TVOC: 243 ppb | AQI: 3
@@ -138,3 +139,4 @@ ENS160 — это цифровой мультигазовый датчик, сп
 [7783] Operating OK | eCO2: 727 ppm | TVOC: 229 ppb | AQI: 3
 [7784] Operating OK | eCO2: 735 ppm | TVOC: 235 ppb | AQI: 3
 [7785] Operating OK | eCO2: 733 ppm | TVOC: 234 ppb | AQI: 3
+```
